@@ -4,7 +4,9 @@ import (
 	"awesomeProject/internal/database"
 	"awesomeProject/internal/handlers"
 	"awesomeProject/internal/tasksService"
+	"awesomeProject/internal/userService"
 	"awesomeProject/internal/web/tasks"
+	"awesomeProject/internal/web/users"
 	"fmt"
 	"log"
 
@@ -19,10 +21,17 @@ func main() {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
 
-	repo := tasksService.NewTaskRepository(database.DB)
-	service := tasksService.NewService(repo)
+	if err := database.DB.AutoMigrate(&userService.User{}); err != nil {
+		log.Fatalf("failed to migrate database: %v", err)
+	}
 
-	handler := handlers.NewHandler(service)
+	tasksRepo := tasksService.NewTaskRepository(database.DB)
+	TasksService := tasksService.NewService(tasksRepo)
+	TasksHandler := handlers.NewTaskHandler(TasksService)
+
+	usersRepo := userService.NewUserRepository(database.DB)
+	UsersService := userService.NewUserService(usersRepo)
+	UsersHandler := handlers.NewUserHandler(UsersService)
 
 	// Инициализируем echo
 	e := echo.New()
@@ -32,8 +41,11 @@ func main() {
 	e.Use(middleware.Recover())
 
 	// Прикол для работы в echo. Передаем и регистрируем хендлер в echo
-	strictHandler := tasks.NewStrictHandler(handler, nil)
-	tasks.RegisterHandlersWithBaseURL(e, strictHandler, "/api")
+	strictTasksHandler := tasks.NewStrictHandler(TasksHandler, nil)
+	tasks.RegisterHandlersWithBaseURL(e, strictTasksHandler, "/api")
+
+	strictUsersHandler := users.NewStrictHandler(UsersHandler, nil)
+	users.RegisterHandlersWithBaseURL(e, strictUsersHandler, "/api")
 
 	// Выводим все зарегистрированные маршруты
 	for _, route := range e.Routes() {
