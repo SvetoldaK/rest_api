@@ -29,6 +29,7 @@ func (h *UserHandler) GetUsers(_ context.Context, _ users.GetUsersRequestObject)
 		user := users.User{
 			Id:       &user.ID,
 			Password: &user.Password,
+			Username: &user.Username,
 		}
 		response = append(response, user)
 	}
@@ -43,6 +44,7 @@ func (h *UserHandler) PostUsers(_ context.Context, request users.PostUsersReques
 
 	userToCreate := userService.User{
 		Password: *request.Body.Password,
+		Username: *request.Body.Username,
 	}
 
 	createdUser, err := h.Service.PostUser(userToCreate)
@@ -53,6 +55,7 @@ func (h *UserHandler) PostUsers(_ context.Context, request users.PostUsersReques
 	return users.PostUsers201JSONResponse{
 		Id:       &createdUser.ID,
 		Password: &createdUser.Password,
+		Username: &createdUser.Username,
 	}, nil
 }
 
@@ -69,6 +72,7 @@ func (h *UserHandler) PatchUsersId(_ context.Context, request users.PatchUsersId
 	userID := uint(request.Id)
 	userToUpdate := userService.User{
 		Password: *request.Body.Password,
+		Username: *request.Body.Username,
 	}
 
 	updatedUser, err := h.Service.PatchUserByID(userID, userToUpdate)
@@ -79,5 +83,6 @@ func (h *UserHandler) PatchUsersId(_ context.Context, request users.PatchUsersId
 	return users.PatchUsersId200JSONResponse{
 		Id:       &updatedUser.ID,
 		Password: &updatedUser.Password,
+		Username: &updatedUser.Username,
 	}, nil
 }

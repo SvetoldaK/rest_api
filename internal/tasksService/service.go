@@ -1,5 +1,9 @@
 package tasksService
 
+import (
+	"awesomeProject/internal/models"
+)
+
 type TaskService struct {
 	repo TaskRepository
 }
@@ -9,17 +13,22 @@ func NewService(repo TaskRepository) *TaskService {
 }
 
 // CreateTask создает новую задачу
-func (s *TaskService) CreateTask(task Task) (Task, error) {
+func (s *TaskService) CreateTask(task models.Task) (models.Task, error) {
 	return s.repo.CreateTask(task)
 }
 
 // GetAllTasks возвращает все задачи из базы данных
-func (s *TaskService) GetAllTasks() ([]Task, error) {
+func (s *TaskService) GetAllTasks() ([]models.Task, error) {
 	return s.repo.GetAllTasks()
 }
 
+// GetTasksByUserID возвращает все задачи пользователя
+func (s *TaskService) GetTasksByUserID(userID uint) ([]models.Task, error) {
+	return s.repo.GetTasksByUserID(userID)
+}
+
 // UpdateTaskByID обновляет задачу по её ID
-func (s *TaskService) UpdateTaskByID(id uint, task Task) (Task, error) {
+func (s *TaskService) UpdateTaskByID(id uint, task models.Task) (models.Task, error) {
 	return s.repo.UpdateTaskByID(id, task)
 }
 

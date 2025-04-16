@@ -11,8 +11,8 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/oapi-codegen/runtime"
-	openapi_types "github.com/oapi-codegen/runtime/types"
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 // User defines model for User.
@@ -20,6 +20,7 @@ type User struct {
 	Email    *openapi_types.Email `json:"email,omitempty"`
 	Id       *uint                `json:"id,omitempty"`
 	Password *string              `json:"password,omitempty"`
+	Username *string              `json:"username,omitempty"`
 }
 
 // PostUsersJSONRequestBody defines body for PostUsers for application/json ContentType.

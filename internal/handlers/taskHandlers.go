@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"awesomeProject/internal/models"
 	"awesomeProject/internal/tasksService"
 	"awesomeProject/internal/web/tasks"
 	"context"
@@ -17,78 +18,116 @@ func NewTaskHandler(service *tasksService.TaskService) *TaskHandler {
 	}
 }
 
-func (h *TaskHandler) GetTasks(_ context.Context, _ tasks.GetTasksRequestObject) (tasks.GetTasksResponseObject, error) {
-	// Получение всех задач из сервиса
+func (h *TaskHandler) GetTasks(ctx context.Context, request tasks.GetTasksRequestObject) (tasks.GetTasksResponseObject, error) {
+	if request.Params.UserId != nil {
+		userTasks, err := h.Service.GetTasksByUserID(uint(*request.Params.UserId))
+		if err != nil {
+			return nil, err
+		}
+		var response tasks.GetTasks200JSONResponse
+		for _, tsk := range userTasks {
+			id := tsk.ID
+			response = append(response, tasks.Task{
+				Id:     &id,
+				Task:   tsk.Task,
+				IsDone: tsk.IsDone,
+				UserId: tsk.UserID,
+			})
+		}
+		return response, nil
+	}
+
 	allTasks, err := h.Service.GetAllTasks()
 	if err != nil {
 		return nil, err
 	}
 
-	// Создаем переменную респон типа 200джейсонРеспонс
-	// Которую мы потом передадим в качестве ответа
-	response := tasks.GetTasks200JSONResponse{}
-
-	// Заполняем слайс response всеми задачами из БД
+	var response tasks.GetTasks200JSONResponse
 	for _, tsk := range allTasks {
-		task := tasks.Task{
-			Id:     &tsk.ID,
-			Task:   &tsk.Task,
-			IsDone: &tsk.IsDone,
-		}
-		response = append(response, task)
+		id := tsk.ID
+		response = append(response, tasks.Task{
+			Id:     &id,
+			Task:   tsk.Task,
+			IsDone: tsk.IsDone,
+			UserId: tsk.UserID,
+		})
 	}
-
-	// САМОЕ ПРЕКРАСНОЕ. Возвращаем просто респонс и nil!
 	return response, nil
 }
 
-func (h *TaskHandler) PostTasks(_ context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
-	if request.Body == nil || request.Body.Task == nil || request.Body.IsDone == nil {
-		return nil, fmt.Errorf("task and is_done fields are required")
+func (h *TaskHandler) PostTasks(ctx context.Context, request tasks.PostTasksRequestObject) (tasks.PostTasksResponseObject, error) {
+	if request.Body == nil {
+		return nil, fmt.Errorf("request body is required")
 	}
 
-	taskToCreate := tasksService.Task{
-		Task:   *request.Body.Task,
-		IsDone: *request.Body.IsDone,
+	taskToCreate := models.Task{
+		Task:   request.Body.Task,
+		IsDone: request.Body.IsDone,
+		UserID: request.Body.UserId,
 	}
 	createdTask, err := h.Service.CreateTask(taskToCreate)
-
 	if err != nil {
 		return nil, err
 	}
-	// создаем структуру респонс
+
+	id := createdTask.ID
 	response := tasks.PostTasks201JSONResponse{
-		Id:     &createdTask.ID,
-		Task:   &createdTask.Task,
-		IsDone: &createdTask.IsDone,
+		Id:     &id,
+		Task:   createdTask.Task,
+		IsDone: createdTask.IsDone,
+		UserId: createdTask.UserID,
 	}
-	// Просто возвращаем респонс!
 	return response, nil
 }
 
-func (h *TaskHandler) DeleteTasksId(_ context.Context, request tasks.DeleteTasksIdRequestObject) (tasks.DeleteTasksIdResponseObject, error) {
+func (h *TaskHandler) DeleteTasksId(ctx context.Context, request tasks.DeleteTasksIdRequestObject) (tasks.DeleteTasksIdResponseObject, error) {
 	taskID := uint(request.Id)
 	if err := h.Service.DeleteTaskByID(taskID); err != nil {
 		return nil, err
 	}
-
 	return tasks.DeleteTasksId204Response{}, nil
 }
 
-func (h *TaskHandler) PatchTasksId(_ context.Context, request tasks.PatchTasksIdRequestObject) (tasks.PatchTasksIdResponseObject, error) {
+func (h *TaskHandler) PatchTasksId(ctx context.Context, request tasks.PatchTasksIdRequestObject) (tasks.PatchTasksIdResponseObject, error) {
 	taskID := uint(request.Id)
-	taskToUpdate := tasksService.Task{
-		Task:   *request.Body.Task,
-		IsDone: *request.Body.IsDone,
+	if request.Body == nil {
+		return nil, fmt.Errorf("request body is required")
+	}
+
+	taskToUpdate := models.Task{
+		Task:   request.Body.Task,
+		IsDone: request.Body.IsDone,
+		UserID: request.Body.UserId,
 	}
 	updatedTask, err := h.Service.UpdateTaskByID(taskID, taskToUpdate)
 	if err != nil {
 		return nil, err
 	}
+
+	id := updatedTask.ID
 	response := tasks.PatchTasksId200JSONResponse{
-		Id:     &updatedTask.ID,
-		Task:   &updatedTask.Task,
-		IsDone: &updatedTask.IsDone,
+		Id:     &id,
+		Task:   updatedTask.Task,
+		IsDone: updatedTask.IsDone,
+		UserId: updatedTask.UserID,
+	}
+	return response, nil
+}
+
+func (h *TaskHandler) GetUsersIdTasks(ctx context.Context, request tasks.GetUsersIdTasksRequestObject) (tasks.GetUsersIdTasksResponseObject, error) {
+	userTasks, err := h.Service.GetTasksByUserID(request.Id)
+	if err != nil {
+		return nil, err
+	}
+	var response tasks.GetUsersIdTasks200JSONResponse
+	for _, tsk := range userTasks {
+		id := tsk.ID
+		response = append(response, tasks.Task{
+			Id:     &id,
+			Task:   tsk.Task,
+			IsDone: tsk.IsDone,
+			UserId: tsk.UserID,
+		})
 	}
 	return response, nil
 }
